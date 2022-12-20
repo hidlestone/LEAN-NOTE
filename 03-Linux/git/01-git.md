@@ -387,6 +387,6 @@ git --bare init /home/git/first
 　　$ git remote add origin git@192.168.25.156:/home/git/repo1
 ```
 
-使用TortoiseGit同步的话参考上面的使用方法。
+使用TortoiseGit同步的话参考上面的使用方法。   
 ![git-43](./images/git-43.png)
 
