@@ -49,14 +49,64 @@ public class Q2006 {
 
 	/*
 	进阶解法：
-	 
+	在由n个节点组成的环中，这个幸存节点的编号。--> Num(n)
+	已知：Num(1) = 1
+	如果再确定Num(i-1)和Num(i)的关系，就可以通过递归过程求出Num(n)。 
+	
+	---------------
+	A    B
+	1    1
+	2    2
+	...  ...
+	i    i
+	i+1  1
+	i+2  2
+	
+	报A的编号B的节点，则A和B的对应关系：
+	B=(A-1)%i+1
+	
+	---------------
+	如果编号为s的节点删除，环的节点数自然从i编程i-1。那么原来再大小为i的环中，每个节点的编号会发生什么变化。
+	old   new
+	...  ...
+	s-2  i-2
+	s-1  i-1
+	s    无编号是因为被删除
+	s+1  1
+	s+2  2
+	
+	假设环大小为i的节点编号记为old，环大小为i-1的每个节点编号记为new。
+	则old与new关系的数学表达式：old=(new+s-1)%i+1
+	
+	因为每次都是报数到m的节点被杀，所以根据步骤1的表达式：B=(A-1)%i+1 , A=m 。
+	被杀的节点编号 (m-1)%i+1 ,即 s=(m-1)%i+1 ,带入到步骤2的表达式 old=(new+s-1)%i+1 。
+	old=(new+m-1)%i+1
+	至此，得到了Num(i-1) new ,Num(i) old 的关系
+	
+	
+	  
+	  
 	**/
 	public static Node josephusKill2(Node head, int m) {
 		if (head == null || head.next == head || m < 1) {
 			return head;
 		}
+		Node cur = head.next;
+		int tmp = 1; // 单链表长度
+		while (cur != head) {
+			tmp++;
+			cur = cur.next;
+		}
+
 
 		return head;
+	}
+
+	public static int getLive(int i, int m) {
+		if (i == 1) {
+			return 1;
+		}
+		return (getLive(i - 1, m) + m - 1) % i + 1;
 	}
 
 	public static void printCircularList(Node head) {
