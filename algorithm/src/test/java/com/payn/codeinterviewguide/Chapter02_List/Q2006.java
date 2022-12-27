@@ -83,9 +83,6 @@ public class Q2006 {
 	old=(new+m-1)%i+1
 	至此，得到了Num(i-1) new ,Num(i) old 的关系
 	
-	
-	  
-	  
 	**/
 	public static Node josephusKill2(Node head, int m) {
 		if (head == null || head.next == head || m < 1) {
@@ -97,8 +94,11 @@ public class Q2006 {
 			tmp++;
 			cur = cur.next;
 		}
-
-
+		tmp = getLive(tmp, m);// 存活下来的节点
+		while (--tmp != 0) {
+			head = head.next;
+		}
+		head.next = head;
 		return head;
 	}
 
