@@ -535,42 +535,166 @@ yarn --daemon start/stop  resourcemanager/nodemanager
 ```
 
 #### 3.2.9、编写Hadoop集群常用脚本
+1）Hadoop集群启停脚本（包含HDFS，Yarn，Historyserver）：myhadoop.sh
+```
+cd /home/atguigu/bin
+vim myhadoop.sh
+```
+内容如下：
+```
+#!/bin/bash
 
+if [ $# -lt 1 ]
+then
+    echo "No Args Input..."
+    exit ;
+fi
 
+case $1 in
+"start")
+        echo " =================== 启动 hadoop集群 ==================="
 
+        echo " --------------- 启动 hdfs ---------------"
+        ssh hadoop102 "/opt/module/hadoop-3.1.3/sbin/start-dfs.sh"
+        echo " --------------- 启动 yarn ---------------"
+        ssh hadoop103 "/opt/module/hadoop-3.1.3/sbin/start-yarn.sh"
+        echo " --------------- 启动 historyserver ---------------"
+        ssh hadoop102 "/opt/module/hadoop-3.1.3/bin/mapred --daemon start historyserver"
+;;
+"stop")
+        echo " =================== 关闭 hadoop集群 ==================="
 
+        echo " --------------- 关闭 historyserver ---------------"
+        ssh hadoop102 "/opt/module/hadoop-3.1.3/bin/mapred --daemon stop historyserver"
+        echo " --------------- 关闭 yarn ---------------"
+        ssh hadoop103 "/opt/module/hadoop-3.1.3/sbin/stop-yarn.sh"
+        echo " --------------- 关闭 hdfs ---------------"
+        ssh hadoop102 "/opt/module/hadoop-3.1.3/sbin/stop-dfs.sh"
+;;
+*)
+    echo "Input Args Error..."
+;;
+esac
+```
+保存后退出，然后赋予脚本执行权限
+```
+chmod +x myhadoop.sh
+```
 
+2）查看三台服务器Java进程脚本：jpsall
+```
+cd /home/atguigu/bin
+vim jpsall
+```
+输入如下内容
+```
+#!/bin/bash
 
+for host in hadoop102 hadoop103 hadoop104
+do
+        echo =============== $host ===============
+        ssh $host jps 
+done
+```
+保存后退出，然后赋予脚本执行权限
+```
+chmod +x jpsall
+```
+3）分发/home/atguigu/bin目录，保证自定义脚本在三台机器上都可以使用
+```
+xsync /home/atguigu/bin/
+```
 
+#### 3.2.10、常用端口号说明
+```
+端口名称	                    Hadoop2.x	    Hadoop3.x
+NameNode内部通信端口	        8020 / 9000	    8020 / 9000/9820
+NameNode HTTP UI	        50070	        9870
+MapReduce查看执行任务端口	8088	        8088
+历史服务器通信端口	        19888	        19888
+```
 
+#### 3.2.11、集群时间同步
+如果服务器在公网环境（能连接外网），可以不采用集群时间同步，因为服务器会定期和公网时间进行校准；  
+如果服务器在内网环境，必须要配置集群时间同步，否则时间久了，会产生时间偏差，导致集群执行任务时间不同步。  
 
+1）需求   
+找一个机器，作为时间服务器，所有的机器与这台集群时间进行定时的同步，生产环境根据任务对时间的准确程度要求周期同步。测试环境为了尽快看到效果，采用1分钟同步一   
+![](./images/hp-18.png)   
 
+2）时间服务器配置（必须root用户）  
+（1）查看所有节点ntpd服务状态和开机自启动状态  
+```
+[atguigu@hadoop102 ~]$ sudo systemctl status ntpd
+[atguigu@hadoop102 ~]$ sudo systemctl start ntpd
+[atguigu@hadoop102 ~]$ sudo systemctl is-enabled ntpd
+```
+（2）修改hadoop102的ntp.conf配置文件  
+```
+[atguigu@hadoop102 ~]$ sudo vim /etc/ntp.conf
+```
+修改内容如下  
+（a）修改1（授权192.168.10.0-192.168.10.255网段上的所有机器可以从这台机器上查询和同步时间）   
+```
+#restrict 192.168.10.0 mask 255.255.255.0 nomodify notrap
+为restrict 192.168.10.0 mask 255.255.255.0 nomodify notrap
+```
+（b）修改2（集群在局域网中，不使用其他互联网上的时间）
+```
+server 0.centos.pool.ntp.org iburst
+server 1.centos.pool.ntp.org iburst
+server 2.centos.pool.ntp.org iburst
+server 3.centos.pool.ntp.org iburst
+为
+#server 0.centos.pool.ntp.org iburst
+#server 1.centos.pool.ntp.org iburst
+#server 2.centos.pool.ntp.org iburst
+#server 3.centos.pool.ntp.org iburst
+```
+（c）添加3（当该节点丢失网络连接，依然可以采用本地时间作为时间服务器为集群中的其他节点提供时间同步）
+```
+server 127.127.1.0
+fudge 127.127.1.0 stratum 10
+```
+（3）修改hadoop102的/etc/sysconfig/ntpd 文件
+```
+sudo vim /etc/sysconfig/ntpd
+```
+增加内容如下（让硬件时间与系统时间一起同步）
+```
+SYNC_HWCLOCK=yes
+```
+（4）重新启动ntpd服务
+```
+sudo systemctl start ntpd
+```
+（5）设置ntpd服务开机启动
+```
+sudo systemctl enable ntpd
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+3）其他机器配置（必须root用户）  
+（1）关闭所有节点上ntp服务和自启动  
+```
+sudo systemctl stop ntpd
+sudo systemctl disable ntpd
+sudo systemctl stop ntpd
+sudo systemctl disable ntpd
+```
+（2）在其他机器配置1分钟与时间服务器同步一次
+```
+sudo crontab -e
+```
+编写定时任务如下：
+```
+*/1 * * * * /usr/sbin/ntpdate hadoop102
+```
+（3）修改任意机器时间
+```
+sudo date -s "2021-9-11 11:11:11"
+```
+（4）1分钟后查看机器是否与时间服务器同步
+```
+sudo date
+```
 
