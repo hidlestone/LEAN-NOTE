@@ -92,7 +92,7 @@ reboot
 2）修改克隆机 IP，以下以 hadoop102 举例说明  
 （1）修改克隆虚拟机的静态 IP   
 ```
-vim /etc/sysconfig/network-scripts/ifcfgens33
+vim /etc/sysconfig/network-scripts/ifcfgens33 
 ```
 改成 
 ```
