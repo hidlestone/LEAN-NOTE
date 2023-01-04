@@ -212,7 +212,7 @@ hadoop fs -du  -h /jinguo
 14  42  /jinguo/shuguo.txt
 7   21   /jinguo/weiguo.txt
 6   18   /jinguo/wuguo.tx
-	说明：27表示文件大小；81表示27*3个副本；/jinguo表示查看的目录
+	说明：27(B Byte)表示文件大小；81表示27*3个副本；/jinguo表示查看的目录
 ```
 11）-setrep：设置HDFS中文件的副本数量
 ```
@@ -235,7 +235,7 @@ hadoop fs -setrep 10 /jinguo/shuguo.txt
 ![](./images/hdfs-06.png)   
 
 ### 3.2、HDFS的API案例
-详见代码。
+详见代码 HDFSClient。
 
 
 ## 四、HDFS的读写流程
