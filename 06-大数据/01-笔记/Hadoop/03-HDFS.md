@@ -234,6 +234,8 @@ hadoop fs -setrep 10 /jinguo/shuguo.txt
 验证Hadoop环境变量是否正常。双击winutils.exe，如果报如下错误。说明缺少微软运行库（正版系统往往有这个问题）。再资料包里面有对应的微软运行库安装包双击安装即可。   
 ![](./images/hdfs-06.png)   
 
+参考：https://blog.csdn.net/m0_57102326/article/details/126348048
+
 ### 3.2、HDFS的API案例
 详见代码 HDFSClient。
 
